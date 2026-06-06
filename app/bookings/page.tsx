@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { getUserBookings } from '@/app/actions/bookings'
 import Link from 'next/link'
+import { SiteImage } from '@/components/site-image'
+import { bookingImages } from '@/lib/images'
 
 export default function BookingsPage() {
   const router = useRouter()
@@ -52,7 +54,14 @@ export default function BookingsPage() {
             <p className="text-muted-foreground">Loading your bookings...</p>
           </div>
         ) : bookings.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 max-w-lg mx-auto">
+            <div className="relative photo-frame aspect-[16/10] overflow-hidden mb-8">
+              <SiteImage
+                slot={bookingImages.emptyState}
+                preset="thumbnail"
+                wrapperClassName="absolute inset-0"
+              />
+            </div>
             <h2 className="text-xl font-semibold text-foreground mb-4">No bookings yet</h2>
             <p className="text-muted-foreground mb-8">Start your African adventure by booking your first stay.</p>
             <Link href="/book">
@@ -64,7 +73,15 @@ export default function BookingsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {bookings.map((booking) => (
-              <div key={booking.id} className="bg-card border border-border rounded-lg p-6 hover:border-primary transition">
+              <div key={booking.id} className="photo-frame bg-card overflow-hidden border-0 hover:shadow-xl transition-shadow">
+                <div className="relative aspect-[16/10]">
+                  <SiteImage
+                    slot={bookingImages.cardFallback}
+                    preset="thumbnail"
+                    wrapperClassName="absolute inset-0"
+                  />
+                </div>
+                <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="font-serif text-lg font-bold text-foreground">Booking #{booking.id.slice(0, 8)}</h3>
@@ -103,6 +120,7 @@ export default function BookingsPage() {
                       Cancel Booking
                     </Button>
                   )}
+                </div>
                 </div>
               </div>
             ))}

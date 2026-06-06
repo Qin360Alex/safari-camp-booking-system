@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { SiteImage } from '@/components/site-image'
 import { createBooking } from '@/app/actions/bookings'
+import { bookImages, getAccommodationImage, isCustomImage } from '@/lib/images'
 
 const accommodations = [
   {
@@ -89,10 +91,23 @@ export default function BookPage() {
     }
   }
 
+  const showBanner = isCustomImage(bookImages.headerBanner)
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border">
+        {showBanner && (
+          <div className="relative h-52 md:h-72 w-full">
+            <SiteImage
+              slot={bookImages.headerBanner}
+              preset="banner"
+              objectPosition="center 35%"
+              wrapperClassName="absolute inset-0"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+          </div>
+        )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <h1 className="text-3xl font-serif font-bold text-foreground">Book Your Safari Adventure</h1>
           <p className="text-muted-foreground mt-2">Choose your accommodation and dates</p>
@@ -110,12 +125,20 @@ export default function BookPage() {
                 <div
                   key={acc.id}
                   onClick={() => setSelectedAccommodation(acc.id)}
-                  className={`p-6 rounded-lg border-2 cursor-pointer transition ${
+                  className={`rounded-lg border-2 cursor-pointer transition overflow-hidden ${
                     selectedAccommodation === acc.id
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary'
                   }`}
                 >
+                  <div className="relative aspect-[16/10]">
+                    <SiteImage
+                      slot={getAccommodationImage(acc.id)}
+                      preset="cardLarge"
+                      wrapperClassName="absolute inset-0"
+                    />
+                  </div>
+                  <div className="p-6">
                   <h3 className="font-serif text-lg font-bold text-foreground mb-2">{acc.name}</h3>
                   <p className="text-sm text-muted-foreground mb-4">{acc.description}</p>
                   <div className="space-y-2 mb-4">
@@ -128,6 +151,7 @@ export default function BookPage() {
                         {amenity}
                       </span>
                     ))}
+                  </div>
                   </div>
                 </div>
               ))}

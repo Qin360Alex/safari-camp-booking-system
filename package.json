@@ -6,10 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:reset": "tsx --env-file=.env.local scripts/reset-db.ts",
+    "db:push": "drizzle-kit push --force",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "brand:icons": "node scripts/generate-brand-icons.mjs",
+    "setup": "pnpm db:push && pnpm db:seed"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
+    "@better-auth/drizzle-adapter": "^1.6.14",
     "@vercel/analytics": "1.6.1",
     "better-auth": "^1.6.14",
     "class-variance-authority": "^0.7.1",
@@ -32,8 +39,12 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.4",
     "postcss": "^8.5",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.2.0",
+    "tsx": "^4.20.5",
     "typescript": "5.7.3"
   }
 }

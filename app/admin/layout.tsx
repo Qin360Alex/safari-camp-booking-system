@@ -1,17 +1,35 @@
 import Link from 'next/link'
+import Image from 'next/image'
+import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { requireAdmin } from '@/lib/session'
+import { brandImages, resolveImageSrc } from '@/lib/images'
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const admin = await requireAdmin()
+  if (!admin) {
+    redirect('/sign-in?callbackUrl=/admin')
+  }
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
       <div className="w-64 border-r border-border bg-card p-6">
-        <h1 className="text-xl font-serif font-bold text-foreground mb-8">Safari Camp Admin</h1>
-        
+        <div className="mb-8">
+          <Image
+            src={resolveImageSrc(brandImages.logoMark)}
+            alt={brandImages.logoMark.alt}
+            width={160}
+            height={56}
+            className="h-10 w-auto object-contain object-left"
+          />
+          <p className="text-xs text-muted-foreground mt-2 font-medium uppercase tracking-wide">
+            Admin
+          </p>
+        </div>
         <nav className="space-y-2">
           <NavLink href="/admin" label="Dashboard" />
           <NavLink href="/admin/bookings" label="Bookings" />
@@ -37,7 +55,7 @@ export default function AdminLayout({
         <div className="border-b border-border bg-card px-8 py-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">Management Dashboard</h2>
           <div className="flex items-center gap-4">
-            <div className="text-sm text-muted-foreground">Admin User</div>
+            <div className="text-sm text-muted-foreground">{admin.name}</div>
           </div>
         </div>
 
