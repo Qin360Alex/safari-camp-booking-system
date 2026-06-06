@@ -1,0 +1,120 @@
+'use client'
+
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Breadcrumb } from '@/components/breadcrumb'
+import { SectionHeader } from '@/components/landing/section-header'
+import { experiences } from '@/lib/landing-data'
+import { Clock } from 'lucide-react'
+
+export default function ExperiencesPage() {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Breadcrumb items={[{ label: 'Experiences' }]} />
+
+      {/* Header Section */}
+      <section className="px-4 sm:px-6 lg:px-8 py-12 md:py-20 max-w-7xl mx-auto">
+        <SectionHeader
+          eyebrow="Unforgettable adventures"
+          title="Safari experiences"
+          description="Immerse yourself in world-class safari adventures led by expert guides. From game drives to bush walks, discover the African wilderness like never before."
+        />
+      </section>
+
+      {/* Experiences Grid */}
+      <section className="px-4 sm:px-6 lg:px-8 pb-20 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {experiences.map(experience => (
+            <Link key={experience.id} href={`/experiences/${experience.id}`}>
+              <Card className="group h-full border-border hover:border-primary transition overflow-hidden cursor-pointer">
+                {/* Image Placeholder */}
+                <div className="aspect-video bg-gradient-to-br from-accent/40 to-primary/40 flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition duration-300">
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition" />
+                  <p className="text-white font-serif text-lg relative z-10">{experience.title}</p>
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  <h3 className="text-2xl font-serif font-bold text-foreground mb-2">
+                    {experience.title}
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    {experience.description}
+                  </p>
+
+                  {/* Duration */}
+                  <div className="flex items-center gap-2 text-primary font-medium">
+                    <Clock className="size-4" />
+                    <span>{experience.duration}</span>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Experience Details */}
+      <section className="px-4 sm:px-6 lg:px-8 py-16 bg-muted/30 border-t border-border">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-serif font-bold text-foreground mb-8">Why our experiences stand out</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            <Card className="p-8 border-border">
+              <h3 className="text-xl font-bold text-foreground mb-3">Expert Guides</h3>
+              <p className="text-muted-foreground">
+                Our guides bring decades of combined experience in wildlife tracking, conservation, and guest engagement to every experience.
+              </p>
+            </Card>
+
+            <Card className="p-8 border-border">
+              <h3 className="text-xl font-bold text-foreground mb-3">Small Groups</h3>
+              <p className="text-muted-foreground">
+                Limited group sizes ensure intimate encounters with wildlife and personalized attention from your guide throughout.
+              </p>
+            </Card>
+
+            <Card className="p-8 border-border">
+              <h3 className="text-xl font-bold text-foreground mb-3">Premium Equipment</h3>
+              <p className="text-muted-foreground">
+                High-quality binoculars, cameras, and open-air vehicles equipped with comfortable seating and excellent visibility.
+              </p>
+            </Card>
+
+            <Card className="p-8 border-border">
+              <h3 className="text-xl font-bold text-foreground mb-3">Flexible Scheduling</h3>
+              <p className="text-muted-foreground">
+                Early morning, afternoon, and night experiences to catch different wildlife behaviors and spectacular natural light.
+              </p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Booking Section */}
+      <section className="px-4 sm:px-6 lg:px-8 py-16 max-w-7xl mx-auto">
+        <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-12 border border-border">
+          <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4 text-center">
+            Ready to experience the wilderness?
+          </h2>
+          <p className="text-center text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
+            Book your safari adventure today. Combine multiple experiences with your accommodation to create the perfect African getaway.
+          </p>
+          <div className="flex justify-center gap-4">
+            <Link href="/book">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3">
+                Plan your trip
+              </Button>
+            </Link>
+            <Link href="/accommodations">
+              <Button variant="outline" className="px-8 py-3">
+                View stays
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}

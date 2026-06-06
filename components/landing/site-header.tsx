@@ -8,10 +8,10 @@ import { SiteLogo } from '@/components/site-logo'
 import { cn } from '@/lib/utils'
 
 const navLinks = [
-  { href: '#accommodations', label: 'Stays' },
-  { href: '#experiences', label: 'Experiences' },
+  { href: '/accommodations', label: 'Stays' },
+  { href: '/experiences', label: 'Experiences' },
+  { href: '/guides', label: 'Guides' },
   { href: '#how-it-works', label: 'How it works' },
-  { href: '#about', label: 'About' },
 ] as const
 
 export function SiteHeader() {
