@@ -20,23 +20,23 @@ export function LandingFooter() {
             <h4 className="font-serif text-lg font-bold mb-4">Explore</h4>
             <ul className="space-y-2.5 text-sm opacity-80">
               <li>
-                <Link href="#accommodations" className="hover:opacity-100 transition">
+                <Link href="/accommodations" className="hover:opacity-100 transition">
                   Accommodations
                 </Link>
               </li>
               <li>
-                <Link href="#experiences" className="hover:opacity-100 transition">
+                <Link href="/experiences" className="hover:opacity-100 transition">
                   Experiences
                 </Link>
               </li>
               <li>
-                <Link href="#how-it-works" className="hover:opacity-100 transition">
-                  How it works
+                <Link href="/guides" className="hover:opacity-100 transition">
+                  Our Guides
                 </Link>
               </li>
               <li>
-                <Link href="#about" className="hover:opacity-100 transition">
-                  About us
+                <Link href="/contact" className="hover:opacity-100 transition">
+                  Contact
                 </Link>
               </li>
             </ul>

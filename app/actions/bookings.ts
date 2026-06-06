@@ -29,6 +29,25 @@ export async function getUserBookings() {
     .orderBy(desc(bookings.createdAt))
 }
 
+// Get a single booking by ID
+export async function getBookingById(bookingId: string) {
+  try {
+    const userId = await getUserId()
+    const booking = await db
+      .select()
+      .from(bookings)
+      .where(and(eq(bookings.id, bookingId), eq(bookings.userId, userId)))
+      .limit(1)
+
+    if (!booking.length) return null
+
+    return booking[0]
+  } catch (error) {
+    console.error('Error fetching booking:', error)
+    return null
+  }
+}
+
 // Get a single booking with line items
 export async function getBookingWithItems(bookingId: string) {
   const userId = await getUserId()

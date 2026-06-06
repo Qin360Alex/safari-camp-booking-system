@@ -1,12 +1,10 @@
 import Link from 'next/link'
-import { SiteHeader } from '@/components/landing/site-header'
 import { HeroSection } from '@/components/landing/hero-section'
 import { TrustStrip } from '@/components/landing/trust-strip'
 import { HowItWorksSection } from '@/components/landing/how-it-works'
 import { PackageCard } from '@/components/landing/package-card'
 import { ExperienceCard } from '@/components/landing/experience-card'
 import { SectionHeader } from '@/components/landing/section-header'
-import { LandingFooter } from '@/components/landing/landing-footer'
 import { SiteImage } from '@/components/site-image'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,8 +18,7 @@ export default function Home() {
   const showCtaBackground = isCustomImage(homeImages.ctaBackground)
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <SiteHeader />
+    <>
       <HeroSection />
       <TrustStrip />
       <HowItWorksSection />
@@ -42,7 +39,7 @@ export default function Home() {
           ))}
         </div>
         <div className="text-center mt-12">
-          <Link href="/book">
+          <Link href="/accommodations">
             <Button
               variant="outline"
               size="lg"
@@ -150,7 +147,7 @@ export default function Home() {
                 Start Booking Now
               </Button>
             </Link>
-            <Link href="/sign-in">
+            <Link href="/auth/sign-up">
               <Button
                 size="lg"
                 variant="outline"
@@ -162,8 +159,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <LandingFooter />
-    </div>
+    </>
   )
 }
