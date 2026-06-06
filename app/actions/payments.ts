@@ -1,114 +1,137 @@
 'use server'
 
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { bookings } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
+import { and, eq } from 'drizzle-orm'
+import {
+  bookingConfirmationEmail,
+  dispatchEmail,
+  sendEmailOrThrow,
+} from '@/lib/email'
+import { requirePermission, requireUser } from '@/lib/session'
 
-// Initialize payment session
+const baseUrl = () =>
+  process.env.BETTER_AUTH_URL?.replace(/\/$/, '') ?? 'http://localhost:3000'
+
+async function assertBookingOwner(bookingId: string, userId: string) {
+  const [booking] = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1)
+
+  if (!booking) throw new Error('Booking not found')
+  if (booking.userId !== userId) throw new Error('Forbidden')
+  return booking
+}
+
 export async function initiatePayment(bookingId: string, amount: number) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
+  const ctx = await requireUser()
+  await assertBookingOwner(bookingId, ctx.id)
 
-  try {
-    // In a real app, this would call Stripe or M-Pesa API
-    // For now, we'll create a mock payment intent
-    const paymentIntentId = `pi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  const paymentIntentId = `pi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
-    return {
-      success: true,
-      paymentIntentId,
-      amount,
-      bookingId,
-      clientSecret: `${paymentIntentId}_secret_${Math.random().toString(36).substr(2, 12)}`,
-      // In production, this would be a Stripe client secret or M-Pesa session token
-    }
-  } catch (error) {
-    console.error('Payment initiation error:', error)
-    throw new Error('Failed to initiate payment')
+  return {
+    success: true,
+    paymentIntentId,
+    amount,
+    bookingId,
+    clientSecret: `${paymentIntentId}_secret_${Math.random().toString(36).substr(2, 12)}`,
   }
 }
 
-// Confirm payment and update booking
 export async function confirmPayment(bookingId: string, paymentIntentId: string) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
+  const ctx = await requireUser()
+  const booking = await assertBookingOwner(bookingId, ctx.id)
+  void paymentIntentId
 
-  try {
-    // Update booking status to paid
-    await db
-      .update(bookings)
-      .set({
-        paymentStatus: 'paid',
-        status: 'confirmed',
-        updatedAt: new Date(),
-      })
-      .where(eq(bookings.id, bookingId))
+  await db
+    .update(bookings)
+    .set({
+      paymentStatus: 'paid',
+      status: 'confirmed',
+      updatedAt: new Date(),
+    })
+    .where(and(eq(bookings.id, bookingId), eq(bookings.userId, ctx.id)))
 
-    return { success: true, message: 'Payment confirmed' }
-  } catch (error) {
-    console.error('Payment confirmation error:', error)
-    throw new Error('Failed to confirm payment')
-  }
+  const { subject, text, html } = bookingConfirmationEmail({
+    name: ctx.name,
+    bookingId,
+    checkIn: new Date(booking.checkInDate).toLocaleDateString('en-US', {
+      dateStyle: 'medium',
+    }),
+    checkOut: new Date(booking.checkOutDate).toLocaleDateString('en-US', {
+      dateStyle: 'medium',
+    }),
+    total: `$${Number(booking.totalPrice).toFixed(2)}`,
+    dashboardUrl: `${baseUrl()}/guest/bookings/${bookingId}`,
+  })
+
+  dispatchEmail({ to: ctx.email, subject, text, html })
+
+  return { success: true, message: 'Payment confirmed' }
 }
 
-// Get payment status
 export async function getPaymentStatus(bookingId: string) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
+  const ctx = await requireUser()
+  await assertBookingOwner(bookingId, ctx.id)
 
-  try {
-    const booking = await db
-      .select({
-        id: bookings.id,
-        paymentStatus: bookings.paymentStatus,
-        totalPrice: bookings.totalPrice,
-      })
-      .from(bookings)
-      .where(eq(bookings.id, bookingId))
+  const [booking] = await db
+    .select({
+      id: bookings.id,
+      paymentStatus: bookings.paymentStatus,
+      totalPrice: bookings.totalPrice,
+    })
+    .from(bookings)
+    .where(and(eq(bookings.id, bookingId), eq(bookings.userId, ctx.id)))
 
-    if (!booking.length) throw new Error('Booking not found')
+  if (!booking) throw new Error('Booking not found')
+  return booking
+}
 
-    return booking[0]
-  } catch (error) {
-    console.error('Payment status error:', error)
-    throw new Error('Failed to get payment status')
+export async function initiateM2MPayment(
+  bookingId: string,
+  phone: string,
+  amount: number
+) {
+  const ctx = await requireUser()
+  await assertBookingOwner(bookingId, ctx.id)
+
+  return {
+    success: true,
+    transactionId: `M2M_${Date.now()}`,
+    bookingId,
+    phone,
+    amount,
+    message: 'M-Pesa prompt sent to your phone',
   }
 }
 
-// Mock M-Pesa payment handler
-export async function initiateM2MPayment(bookingId: string, phone: string, amount: number) {
-  try {
-    // In a real app, this would call M-Pesa STK Push API
-    const transactionId = `M2M_${Date.now()}`
-
-    return {
-      success: true,
-      transactionId,
-      bookingId,
-      phone,
-      amount,
-      message: 'M-Pesa prompt sent to your phone',
-    }
-  } catch (error) {
-    console.error('M2M payment error:', error)
-    throw new Error('Failed to initiate M-Pesa payment')
-  }
-}
-
-// Mock email notification
 export async function sendConfirmationEmail(bookingId: string, userEmail: string) {
-  try {
-    // In a real app, this would integrate with SendGrid, Resend, or similar
-    console.log(`[EMAIL] Confirmation sent to ${userEmail} for booking ${bookingId}`)
+  await requirePermission('booking:update')
 
-    return {
-      success: true,
-      message: 'Confirmation email sent',
-    }
-  } catch (error) {
-    console.error('Email sending error:', error)
-    throw new Error('Failed to send confirmation email')
-  }
+  const [booking] = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1)
+
+  if (!booking) throw new Error('Booking not found')
+
+  const { subject, text, html } = bookingConfirmationEmail({
+    name: 'Guest',
+    bookingId,
+    checkIn: new Date(booking.checkInDate).toLocaleDateString('en-US', {
+      dateStyle: 'medium',
+    }),
+    checkOut: new Date(booking.checkOutDate).toLocaleDateString('en-US', {
+      dateStyle: 'medium',
+    }),
+    total: `$${Number(booking.totalPrice).toFixed(2)}`,
+    dashboardUrl: `${baseUrl()}/guest/bookings/${bookingId}`,
+  })
+
+  await sendEmailOrThrow({ to: userEmail, subject, text, html })
+
+  return { success: true, message: 'Confirmation email sent' }
 }

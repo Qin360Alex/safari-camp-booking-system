@@ -1,73 +1,110 @@
 'use server'
 
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import {
   bookings,
   bookingLineItems,
   roomInventory,
   accommodations,
+  user,
 } from '@/lib/db/schema'
-import { and, eq, gte, lt, desc } from 'drizzle-orm'
-import { headers } from 'next/headers'
+import { and, eq, gte, lt, desc, ilike } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { nanoid } from 'nanoid'
+import {
+  getAuthContext,
+  requirePermission,
+  requireUser,
+  requireVerifiedUser,
+} from '@/lib/session'
+import { hasPermission } from '@/lib/rbac'
 
-async function getUserId() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized')
-  return session.user.id
+async function assertBookingAccess(bookingId: string, userId: string) {
+  const ctx = await getAuthContext()
+  if (!ctx) throw new Error('Unauthorized')
+
+  const [booking] = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1)
+
+  if (!booking) return null
+
+  const isOwner = booking.userId === userId
+  const isStaff = hasPermission(ctx.role, 'booking:read:all')
+
+  if (!isOwner && !isStaff) throw new Error('Forbidden')
+
+  return booking
 }
 
-// Get all bookings for the current user
 export async function getUserBookings() {
-  const userId = await getUserId()
+  const ctx = await requireUser()
   return db
     .select()
     .from(bookings)
-    .where(eq(bookings.userId, userId))
+    .where(eq(bookings.userId, ctx.id))
     .orderBy(desc(bookings.createdAt))
 }
 
-// Get a single booking by ID
 export async function getBookingById(bookingId: string) {
   try {
-    const userId = await getUserId()
-    const booking = await db
-      .select()
-      .from(bookings)
-      .where(and(eq(bookings.id, bookingId), eq(bookings.userId, userId)))
-      .limit(1)
-
-    if (!booking.length) return null
-
-    return booking[0]
+    const ctx = await requireUser()
+    const booking = await assertBookingAccess(bookingId, ctx.id)
+    return booking
   } catch (error) {
     console.error('Error fetching booking:', error)
     return null
   }
 }
 
-// Get a single booking with line items
 export async function getBookingWithItems(bookingId: string) {
-  const userId = await getUserId()
-  const booking = await db
-    .select()
-    .from(bookings)
-    .where(and(eq(bookings.id, bookingId), eq(bookings.userId, userId)))
-    .limit(1)
-
-  if (!booking.length) throw new Error('Booking not found')
+  const ctx = await requireUser()
+  const booking = await assertBookingAccess(bookingId, ctx.id)
+  if (!booking) throw new Error('Booking not found')
 
   const items = await db
     .select()
     .from(bookingLineItems)
     .where(eq(bookingLineItems.bookingId, bookingId))
 
-  return { booking: booking[0], items }
+  return { booking, items }
 }
 
-// Check availability for a date range
+/** Staff-only: lookup bookings by guest email (controlled support access) */
+export async function searchBookingsByGuestEmail(email: string) {
+  await requirePermission('guest:support')
+
+  const trimmed = email.trim().toLowerCase()
+  if (!trimmed || !trimmed.includes('@')) {
+    throw new Error('Enter a valid guest email address')
+  }
+
+  const guestUsers = await db
+    .select({ id: user.id, name: user.name, email: user.email })
+    .from(user)
+    .where(ilike(user.email, trimmed))
+    .limit(5)
+
+  if (!guestUsers.length) return { guests: [], bookings: [] }
+
+  const results = await Promise.all(
+    guestUsers.map(async (guest) => {
+      const guestBookings = await db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.userId, guest.id))
+        .orderBy(desc(bookings.createdAt))
+        .limit(20)
+
+      return { guest, bookings: guestBookings }
+    })
+  )
+
+  return { results }
+}
+
 export async function checkAvailability(
   accommodationId: string,
   checkInDate: string,
@@ -88,18 +125,14 @@ export async function checkAvailability(
       )
     )
 
-  // All dates must have available rooms
-  const isAvailable = dates.every(date => {
+  return dates.every((date) => {
     const inv = inventory.find(
-      i => new Date(i.date).toDateString() === date.toDateString()
+      (i) => new Date(i.date).toDateString() === date.toDateString()
     )
     return inv && inv.availableRooms > 0
   })
-
-  return isAvailable
 }
 
-// Create a new booking (simplified for MVP)
 export async function createBooking(data: {
   accommodationId: string
   checkInDate: string
@@ -107,23 +140,23 @@ export async function createBooking(data: {
   totalPrice: number
   specialRequests?: string
 }) {
-  const userId = await getUserId()
+  const ctx = await requireVerifiedUser()
 
-  // Verify availability
   const isAvailable = await checkAvailability(
     data.accommodationId,
     data.checkInDate,
     data.checkOutDate
   )
 
-  if (!isAvailable) throw new Error('Accommodation not available for selected dates')
+  if (!isAvailable) {
+    throw new Error('Accommodation not available for selected dates')
+  }
 
   const bookingId = nanoid()
 
-  // Create booking
   await db.insert(bookings).values({
     id: bookingId,
-    userId,
+    userId: ctx.id,
     status: 'pending',
     checkInDate: new Date(data.checkInDate),
     checkOutDate: new Date(data.checkOutDate),
@@ -132,14 +165,13 @@ export async function createBooking(data: {
     specialRequests: data.specialRequests,
   })
 
-  // Create line item
-  const accommodation = await db
+  const [accommodation] = await db
     .select()
     .from(accommodations)
     .where(eq(accommodations.id, data.accommodationId))
     .limit(1)
 
-  if (!accommodation.length) throw new Error('Accommodation not found')
+  if (!accommodation) throw new Error('Accommodation not found')
 
   const nights = Math.ceil(
     (new Date(data.checkOutDate).getTime() -
@@ -154,38 +186,27 @@ export async function createBooking(data: {
     checkInDate: new Date(data.checkInDate),
     checkOutDate: new Date(data.checkOutDate),
     roomsBooked: 1,
-    pricePerNight: accommodation[0].pricePerNight,
-    subtotal: (Number(accommodation[0].pricePerNight) * nights).toString(),
+    pricePerNight: accommodation.pricePerNight,
+    subtotal: (Number(accommodation.pricePerNight) * nights).toString(),
   })
 
-  revalidatePath('/bookings')
+  revalidatePath('/guest/dashboard')
   return bookingId
 }
 
-// Cancel a booking
 export async function cancelBooking(bookingId: string) {
-  const userId = await getUserId()
-
-  const booking = await db
-    .select()
-    .from(bookings)
-    .where(and(eq(bookings.id, bookingId), eq(bookings.userId, userId)))
-    .limit(1)
-
-  if (!booking.length) throw new Error('Booking not found')
+  const ctx = await requireUser()
+  const booking = await assertBookingAccess(bookingId, ctx.id)
+  if (!booking) throw new Error('Booking not found')
 
   await db
     .update(bookings)
-    .set({
-      status: 'cancelled',
-      updatedAt: new Date(),
-    })
+    .set({ status: 'cancelled', updatedAt: new Date() })
     .where(eq(bookings.id, bookingId))
 
-  revalidatePath('/bookings')
+  revalidatePath('/guest/dashboard')
 }
 
-// Helper function to get all dates in range
 function getDatesInRange(startDate: Date, endDate: Date): Date[] {
   const dates: Date[] = []
   const currentDate = new Date(startDate)

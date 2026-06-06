@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Breadcrumb } from '@/components/breadcrumb'
 import { experiences } from '@/lib/landing-data'
+import { SiteImage } from '@/components/site-image'
+import { getExperienceImageByExperienceId } from '@/lib/images'
 import { Clock, MapPin, Camera, Binoculars } from 'lucide-react'
 import { notFound } from 'next/navigation'
 
@@ -103,10 +105,12 @@ export default function ExperienceDetailPage({
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Hero Image */}
-            <div className="bg-gradient-to-br from-accent/30 to-primary/30 rounded-lg aspect-video flex items-center justify-center mb-8 border border-border">
-              <div className="text-center">
-                <p className="text-muted-foreground">Gallery for {experience.title}</p>
-              </div>
+            <div className="photo-frame rounded-lg aspect-video mb-8 overflow-hidden relative">
+              <SiteImage
+                slot={getExperienceImageByExperienceId(experienceId)}
+                preset="detailHero"
+                wrapperClassName="absolute inset-0"
+              />
             </div>
 
             {/* Content */}

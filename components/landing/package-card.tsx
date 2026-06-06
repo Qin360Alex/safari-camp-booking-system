@@ -7,19 +7,33 @@ import type { LodgePackage } from '@/lib/landing-data'
 
 type PackageCardProps = {
   pkg: LodgePackage
+  /** When set, card title links here (e.g. `/accommodations/1`) */
+  detailHref?: string
 }
 
-export function PackageCard({ pkg }: PackageCardProps) {
+export function PackageCard({ pkg, detailHref }: PackageCardProps) {
   return (
     <article className="group flex flex-col photo-frame bg-card overflow-hidden border-0 hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
       <div className="relative aspect-[16/11] overflow-hidden">
-        <SiteImage
-          slot={getAccommodationImage(pkg.id)}
-          preset="cardGrid"
-          objectPosition="center"
-          wrapperClassName="absolute inset-0"
-          className="transition-transform duration-700 ease-out group-hover:scale-[1.05]"
-        />
+        {detailHref ? (
+          <Link href={detailHref} className="absolute inset-0 z-[1]">
+            <SiteImage
+              slot={getAccommodationImage(pkg.id)}
+              preset="cardGrid"
+              objectPosition="center"
+              wrapperClassName="absolute inset-0"
+              className="transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+            />
+          </Link>
+        ) : (
+          <SiteImage
+            slot={getAccommodationImage(pkg.id)}
+            preset="cardGrid"
+            objectPosition="center"
+            wrapperClassName="absolute inset-0"
+            className="transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+          />
+        )}
         <div className="absolute inset-0 photo-overlay-bottom opacity-80" />
         {pkg.badge && (
           <span className="absolute top-4 left-4 z-10 text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-secondary text-secondary-foreground shadow-md">
@@ -49,7 +63,11 @@ export function PackageCard({ pkg }: PackageCardProps) {
         </div>
 
         <h3 className="font-serif text-xl md:text-2xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-          {pkg.name}
+          {detailHref ? (
+            <Link href={detailHref}>{pkg.name}</Link>
+          ) : (
+            pkg.name
+          )}
         </h3>
         <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1">
           {pkg.longDescription}
@@ -65,12 +83,12 @@ export function PackageCard({ pkg }: PackageCardProps) {
               </span>
             </p>
           </div>
-          <Link href="/book">
+          <Link href={detailHref ?? '/book'}>
             <Button
               size="sm"
               className="bg-primary hover:bg-primary/90 gap-1.5 shrink-0"
             >
-              View & Book
+              {detailHref ? 'View details' : 'View & Book'}
               <ArrowRight className="size-4" />
             </Button>
           </Link>

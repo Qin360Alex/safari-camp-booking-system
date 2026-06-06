@@ -5,13 +5,28 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Breadcrumb } from '@/components/breadcrumb'
 import { SectionHeader } from '@/components/landing/section-header'
+import { ExperienceCard } from '@/components/landing/experience-card'
+import { SiteImage } from '@/components/site-image'
 import { experiences } from '@/lib/landing-data'
-import { Clock } from 'lucide-react'
+import { isCustomImage, marketingImages } from '@/lib/images'
 
 export default function ExperiencesPage() {
+  const showHero = isCustomImage(marketingImages.experiencesHero)
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Breadcrumb items={[{ label: 'Experiences' }]} />
+
+      {showHero && (
+        <div className="relative h-48 md:h-64 w-full">
+          <SiteImage
+            slot={marketingImages.experiencesHero}
+            preset="banner"
+            wrapperClassName="absolute inset-0"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-black/20" />
+        </div>
+      )}
 
       {/* Header Section */}
       <section className="px-4 sm:px-6 lg:px-8 py-12 md:py-20 max-w-7xl mx-auto">
@@ -27,29 +42,12 @@ export default function ExperiencesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {experiences.map(experience => (
             <Link key={experience.id} href={`/experiences/${experience.id}`}>
-              <Card className="group h-full border-border hover:border-primary transition overflow-hidden cursor-pointer">
-                {/* Image Placeholder */}
-                <div className="aspect-video bg-gradient-to-br from-accent/40 to-primary/40 flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition duration-300">
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition" />
-                  <p className="text-white font-serif text-lg relative z-10">{experience.title}</p>
-                </div>
-
-                {/* Content */}
-                <div className="p-6">
-                  <h3 className="text-2xl font-serif font-bold text-foreground mb-2">
-                    {experience.title}
-                  </h3>
-                  <p className="text-muted-foreground mb-6">
-                    {experience.description}
-                  </p>
-
-                  {/* Duration */}
-                  <div className="flex items-center gap-2 text-primary font-medium">
-                    <Clock className="size-4" />
-                    <span>{experience.duration}</span>
-                  </div>
-                </div>
-              </Card>
+              <ExperienceCard
+                imageKey={experience.imageKey}
+                title={experience.title}
+                description={experience.description}
+                duration={experience.duration}
+              />
             </Link>
           ))}
         </div>

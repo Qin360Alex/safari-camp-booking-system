@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
 import { Breadcrumb } from '@/components/breadcrumb'
 import { SiteImage } from '@/components/site-image'
-import { createBooking } from '@/app/actions/bookings'
+import { checkAvailability } from '@/app/actions/bookings'
+import { saveBookingDraft } from '@/lib/booking-draft'
 import { bookImages, getAccommodationImage, isCustomImage } from '@/lib/images'
 import { ChevronLeft } from 'lucide-react'
 
@@ -51,6 +53,7 @@ const accommodations = [
 
 export default function BookPage() {
   const router = useRouter()
+  const { data: session } = authClient.useSession()
   const [selectedAccommodation, setSelectedAccommodation] = useState<string | null>(null)
   const [checkInDate, setCheckInDate] = useState('')
   const [checkOutDate, setCheckOutDate] = useState('')
@@ -78,17 +81,36 @@ export default function BookPage() {
         throw new Error('Check-out date must be after check-in date')
       }
 
-      const bookingId = await createBooking({
+      const available = await checkAvailability(
+        selectedAccommodation,
+        checkInDate,
+        checkOutDate
+      )
+      if (!available) {
+        throw new Error('Selected dates are not available for this accommodation')
+      }
+
+      if (!selected) throw new Error('Accommodation not found')
+
+      saveBookingDraft({
         accommodationId: selectedAccommodation,
+        accommodationName: selected.name,
         checkInDate,
         checkOutDate,
         totalPrice,
         specialRequests: specialRequests || undefined,
       })
 
-      router.push(`/book/confirmation/${bookingId}`)
+      if (!session?.user) {
+        router.push(
+          `/auth/sign-in?callbackUrl=${encodeURIComponent('/book/pay')}`
+        )
+        return
+      }
+
+      router.push('/book/pay')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create booking')
+      setError(err instanceof Error ? err.message : 'Failed to continue')
     } finally {
       setLoading(false)
     }
@@ -125,7 +147,9 @@ export default function BookPage() {
         )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <h1 className="text-3xl font-serif font-bold text-foreground">Book Your Safari Adventure</h1>
-          <p className="text-muted-foreground mt-2">Choose your accommodation and dates</p>
+          <p className="text-muted-foreground mt-2">
+            Choose your accommodation and dates — sign in at payment
+          </p>
         </div>
       </div>
 
@@ -217,7 +241,7 @@ export default function BookPage() {
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3"
                 disabled={loading || !selectedAccommodation || !checkInDate || !checkOutDate}
               >
-                {loading ? 'Processing...' : 'Continue to Payment'}
+                {loading ? 'Checking availability…' : 'Continue to Payment'}
               </Button>
             </form>
           </div>

@@ -1,6 +1,5 @@
 'use server'
 
-import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import {
   bookings,
@@ -11,32 +10,31 @@ import {
   transfers,
   guests,
   bookingLineItems,
-  activities,
 } from '@/lib/db/schema'
-import { eq, desc, and, gte, lte, count } from 'drizzle-orm'
-import { headers } from 'next/headers'
+import { eq, desc, and, gte, count } from 'drizzle-orm'
+import { requirePermission } from '@/lib/session'
+import type { Permission } from '@/lib/rbac'
 
-// Helper: Verify admin access
-async function getAdminUser() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('Unauthorized: Not authenticated')
-  // In a real app, check user role from database
-  return session.user
+async function assertPerm(permission: Permission) {
+  await requirePermission(permission)
 }
 
-// Dashboard KPIs
 export async function getAdminDashboardKPIs() {
-  await getAdminUser()
+  await assertPerm('booking:read:all')
 
-  const [totalBookings, totalRevenue, activeGuides, activeVehicles] = await Promise.all([
-    db.select({ count: count() }).from(bookings),
-    db
-      .select({ total: count() })
-      .from(bookings)
-      .where(eq(bookings.paymentStatus, 'paid')),
-    db.select({ count: count() }).from(guides).where(eq(guides.isActive, true)),
-    db.select({ count: count() }).from(vehicles).where(eq(vehicles.isActive, true)),
-  ])
+  const [totalBookings, totalRevenue, activeGuides, activeVehicles] =
+    await Promise.all([
+      db.select({ count: count() }).from(bookings),
+      db
+        .select({ total: count() })
+        .from(bookings)
+        .where(eq(bookings.paymentStatus, 'paid')),
+      db.select({ count: count() }).from(guides).where(eq(guides.isActive, true)),
+      db
+        .select({ count: count() })
+        .from(vehicles)
+        .where(eq(vehicles.isActive, true)),
+    ])
 
   return {
     totalBookings: totalBookings[0]?.count || 0,
@@ -46,11 +44,10 @@ export async function getAdminDashboardKPIs() {
   }
 }
 
-// Get all bookings for admin
 export async function getAdminBookings(limit = 50, offset = 0) {
-  await getAdminUser()
+  await assertPerm('booking:read:all')
 
-  const bookingsList = await db
+  return db
     .select({
       id: bookings.id,
       userId: bookings.userId,
@@ -65,75 +62,57 @@ export async function getAdminBookings(limit = 50, offset = 0) {
     .orderBy(desc(bookings.createdAt))
     .limit(limit)
     .offset(offset)
-
-  return bookingsList
 }
 
-// Get all accommodations for admin
 export async function getAdminAccommodations() {
-  await getAdminUser()
+  await assertPerm('content:read')
 
-  return await db
+  return db
     .select()
     .from(accommodations)
     .orderBy(desc(accommodations.createdAt))
 }
 
-// Get all guides for admin
 export async function getAdminGuides() {
-  await getAdminUser()
+  await assertPerm('content:read')
 
-  return await db
-    .select()
-    .from(guides)
-    .orderBy(desc(guides.createdAt))
+  return db.select().from(guides).orderBy(desc(guides.createdAt))
 }
 
-// Get all drivers for admin
 export async function getAdminDrivers() {
-  await getAdminUser()
+  await assertPerm('content:read')
 
-  return await db
-    .select()
-    .from(drivers)
-    .orderBy(desc(drivers.createdAt))
+  return db.select().from(drivers).orderBy(desc(drivers.createdAt))
 }
 
-// Get all vehicles for admin
 export async function getAdminVehicles() {
-  await getAdminUser()
+  await assertPerm('content:read')
 
-  return await db
-    .select()
-    .from(vehicles)
-    .orderBy(desc(vehicles.createdAt))
+  return db.select().from(vehicles).orderBy(desc(vehicles.createdAt))
 }
 
-// Get all transfers for admin
 export async function getAdminTransfers() {
-  await getAdminUser()
+  await assertPerm('content:read')
 
-  return await db
-    .select()
-    .from(transfers)
-    .orderBy(desc(transfers.createdAt))
+  return db.select().from(transfers).orderBy(desc(transfers.createdAt))
 }
 
-// Get all guests for admin
 export async function getAdminGuests() {
-  await getAdminUser()
+  await assertPerm('guest:read:all')
 
-  return await db
-    .select()
-    .from(guests)
-    .orderBy(desc(guests.createdAt))
+  return db.select().from(guests).orderBy(desc(guests.createdAt))
 }
 
-// Update booking status
 export async function updateBookingStatus(bookingId: string, newStatus: string) {
-  await getAdminUser()
+  await assertPerm('booking:update')
 
-  const validStatuses = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled']
+  const validStatuses = [
+    'pending',
+    'confirmed',
+    'checked_in',
+    'checked_out',
+    'cancelled',
+  ]
   if (!validStatuses.includes(newStatus)) {
     throw new Error('Invalid booking status')
   }
@@ -146,37 +125,32 @@ export async function updateBookingStatus(bookingId: string, newStatus: string) 
   return { success: true }
 }
 
-// Get booking details with line items
 export async function getBookingDetails(bookingId: string) {
-  await getAdminUser()
+  await assertPerm('booking:read:all')
 
-  const booking = await db
+  const [booking] = await db
     .select()
     .from(bookings)
     .where(eq(bookings.id, bookingId))
     .limit(1)
 
-  if (!booking.length) return null
+  if (!booking) return null
 
   const items = await db
     .select()
     .from(bookingLineItems)
     .where(eq(bookingLineItems.bookingId, bookingId))
 
-  return {
-    booking: booking[0],
-    items,
-  }
+  return { booking, items }
 }
 
-// Create analytics data
 export async function getRevenueAnalytics(daysBack = 30) {
-  await getAdminUser()
+  await assertPerm('analytics:read')
 
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - daysBack)
 
-  const revenue = await db
+  return db
     .select({
       date: bookings.createdAt,
       total: bookings.totalPrice,
@@ -190,13 +164,10 @@ export async function getRevenueAnalytics(daysBack = 30) {
       )
     )
     .orderBy(desc(bookings.createdAt))
-
-  return revenue
 }
 
-// Get occupancy analytics
 export async function getOccupancyAnalytics() {
-  await getAdminUser()
+  await assertPerm('analytics:read')
 
   const accommodationStats = await Promise.all(
     (await getAdminAccommodations()).map(async (acc) => {
@@ -215,4 +186,22 @@ export async function getOccupancyAnalytics() {
   )
 
   return accommodationStats
+}
+
+/** Lightweight KPIs for staff without analytics permission */
+export async function getStaffDashboardKPIs() {
+  await assertPerm('booking:read:all')
+
+  const [totalBookings, pendingBookings] = await Promise.all([
+    db.select({ count: count() }).from(bookings),
+    db
+      .select({ count: count() })
+      .from(bookings)
+      .where(eq(bookings.status, 'pending')),
+  ])
+
+  return {
+    totalBookings: totalBookings[0]?.count || 0,
+    pendingBookings: pendingBookings[0]?.count || 0,
+  }
 }

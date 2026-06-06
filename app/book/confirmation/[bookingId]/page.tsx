@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { getBookingById } from '@/app/actions/bookings'
+import { SiteImage } from '@/components/site-image'
+import { bookImages, isCustomImage } from '@/lib/images'
 import {
   CheckCircle,
   Download,
@@ -90,8 +92,20 @@ export default function ConfirmationPage() {
     )
   }
 
+  const showHero = isCustomImage(bookImages.confirmationHero)
+
   return (
     <div className="min-h-screen bg-background py-12 px-4">
+      {showHero && (
+        <div className="relative h-40 md:h-52 max-w-2xl mx-auto mb-8 rounded-xl overflow-hidden photo-frame">
+          <SiteImage
+            slot={bookImages.confirmationHero}
+            preset="banner"
+            wrapperClassName="absolute inset-0"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+        </div>
+      )}
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Success Header */}
         <div className="text-center space-y-4">

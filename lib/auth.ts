@@ -2,6 +2,7 @@ import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { betterAuth } from 'better-auth/minimal'
 import { db } from '@/lib/db'
 import * as schema from '@/lib/db/schema'
+import { sendVerificationEmailMessage } from '@/lib/email'
 
 const localOrigin = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
 
@@ -28,6 +29,27 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
+    requireEmailVerification: false,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      sendVerificationEmailMessage({
+        to: user.email,
+        name: user.name,
+        url,
+      })
+    },
+  },
+  user: {
+    additionalFields: {
+      role: {
+        type: 'string',
+        required: false,
+        defaultValue: 'guest',
+        input: false,
+      },
+    },
   },
   trustedOrigins: [
     localOrigin,
@@ -38,13 +60,12 @@ export const auth = betterAuth({
       : []),
   ],
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24, // 1 day
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
   },
   ...(process.env.NODE_ENV === 'development' && process.env.V0_RUNTIME_URL
     ? {
         advanced: {
-          // v0 preview iframe only: cross-site cookies for embedded preview.
           defaultCookieAttributes: {
             sameSite: 'none' as const,
             secure: true,

@@ -34,6 +34,11 @@ export const IMAGE_SIZES = {
   thumbnail: '(max-width: 768px) 100vw, 400px',
   /** Wide header strip */
   banner: '100vw',
+  /** Detail page hero (accommodation / experience) */
+  detailHero:
+    '(max-width: 768px) 100vw, (max-width: 1280px) 66vw, 900px',
+  /** Guide portrait card header */
+  guidePortrait: '(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 500px',
 } as const
 
 export type ImagePreset = keyof typeof IMAGE_SIZES

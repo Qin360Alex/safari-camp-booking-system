@@ -51,18 +51,18 @@ export function LandingFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/bookings" className="hover:opacity-100 transition">
+                <Link href="/guest/dashboard" className="hover:opacity-100 transition">
                   My bookings
                 </Link>
               </li>
               <li>
-                <Link href="/sign-in" className="hover:opacity-100 transition">
+                <Link href="/auth/sign-in" className="hover:opacity-100 transition">
                   Sign in
                 </Link>
               </li>
               <li>
-                <Link href="#" className="hover:opacity-100 transition">
-                  FAQ
+                <Link href="/contact" className="hover:opacity-100 transition">
+                  FAQ &amp; support
                 </Link>
               </li>
             </ul>

@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Breadcrumb } from '@/components/breadcrumb'
+import { submitContactForm } from '@/app/actions/contact'
 import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react'
 
 export default function ContactPage() {
@@ -28,15 +29,17 @@ export default function ContactPage() {
     setIsSubmitting(true)
 
     try {
-      // In a real app, this would send to your backend/email service
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await submitContactForm(formData)
       setIsSubmitted(true)
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' })
-
-      // Reset success message after 5 seconds
-      setTimeout(() => setIsSubmitted(false), 5000)
+      setTimeout(() => setIsSubmitted(false), 8000)
     } catch (error) {
       console.error('Error submitting form:', error)
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to send message. Please try again.'
+      )
     } finally {
       setIsSubmitting(false)
     }

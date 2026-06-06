@@ -1,5 +1,5 @@
 /**
- * Seeds Neon DB: admin user, accommodations, inventory, activities.
+ * Seeds Neon DB: staff users, accommodations, inventory, activities.
  * Run: pnpm db:seed
  */
 import { eq } from 'drizzle-orm'
@@ -13,9 +13,43 @@ import {
   roomInventory,
   user,
 } from '../lib/db/schema'
+import type { UserRole } from '../lib/rbac'
 
-const ADMIN_EMAIL = 'qinalexander56@gmail.com'
-const ADMIN_NAME = 'Qin Alexander'
+type SeedUser = {
+  email: string
+  name: string
+  role: UserRole
+  password: string
+}
+
+const SUPER_ADMIN_EMAIL = 'qinalexander56@gmail.com'
+
+const SEED_USERS: SeedUser[] = [
+  {
+    email: SUPER_ADMIN_EMAIL,
+    name: 'Qin Alexander',
+    role: 'super_admin',
+    password: process.env.SEED_SUPER_ADMIN_PASSWORD ?? process.env.SEED_ADMIN_PASSWORD ?? 'SafariCampAdmin2026!',
+  },
+  {
+    email: 'admin@safaricamplodge.com',
+    name: 'Operations Admin',
+    role: 'admin',
+    password: process.env.SEED_ADMIN_PASSWORD ?? 'SafariAdmin2026!',
+  },
+  {
+    email: 'manager@safaricamplodge.com',
+    name: 'Camp Manager',
+    role: 'manager',
+    password: process.env.SEED_MANAGER_PASSWORD ?? 'SafariManager2026!',
+  },
+  {
+    email: 'frontdesk@safaricamplodge.com',
+    name: 'Front Desk',
+    role: 'staff',
+    password: process.env.SEED_STAFF_PASSWORD ?? 'SafariStaff2026!',
+  },
+]
 
 const ACCOMMODATIONS = [
   {
@@ -87,58 +121,65 @@ function formatDate(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
-async function seedAdmin() {
-  const password =
-    process.env.SEED_ADMIN_PASSWORD ?? 'SafariCampAdmin2026!'
-
+async function seedUser(entry: SeedUser) {
   const existing = await db
     .select()
     .from(user)
-    .where(eq(user.email, ADMIN_EMAIL))
+    .where(eq(user.email, entry.email))
     .limit(1)
 
   if (existing.length > 0) {
     await db
       .update(user)
       .set({
-        role: 'admin',
+        role: entry.role,
         emailVerified: true,
-        name: ADMIN_NAME,
+        name: entry.name,
         updatedAt: new Date(),
       })
-      .where(eq(user.email, ADMIN_EMAIL))
-    console.log(`Admin already exists (${ADMIN_EMAIL}) — role set to admin`)
+      .where(eq(user.email, entry.email))
+    console.log(`  ↻ ${entry.email} → ${entry.role}`)
     return
   }
 
   const result = await auth.api.signUpEmail({
     body: {
-      email: ADMIN_EMAIL,
-      password,
-      name: ADMIN_NAME,
+      email: entry.email,
+      password: entry.password,
+      name: entry.name,
     },
   })
 
   if (result.error) {
     throw new Error(
-      `Failed to create admin: ${result.error.message ?? 'unknown error'}`
+      `Failed to create ${entry.email}: ${result.error.message ?? 'unknown error'}`
     )
   }
 
   const userId = result.user?.id
-  if (!userId) throw new Error('Admin sign-up succeeded but no user id returned')
+  if (!userId) throw new Error(`Sign-up succeeded but no user id for ${entry.email}`)
 
   await db
     .update(user)
     .set({
-      role: 'admin',
+      role: entry.role,
       emailVerified: true,
       updatedAt: new Date(),
     })
     .where(eq(user.id, userId))
 
-  console.log(`Admin created: ${ADMIN_EMAIL}`)
-  console.log(`  Password: (from SEED_ADMIN_PASSWORD or default SafariCampAdmin2026!)`)
+  console.log(`  ✓ ${entry.email} → ${entry.role}`)
+}
+
+async function seedStaffUsers() {
+  console.log('Seeding staff accounts…')
+  for (const entry of SEED_USERS) {
+    await seedUser(entry)
+  }
+  console.log('\nStaff credentials (change in production):')
+  for (const entry of SEED_USERS) {
+    console.log(`  ${entry.role.padEnd(12)} ${entry.email}`)
+  }
 }
 
 async function seedAccommodations() {
@@ -207,7 +248,9 @@ async function seedRoomInventory(daysAhead = 120, roomsPerType = 4) {
       count++
     }
   }
-  console.log(`Seeded ${count} room inventory rows (${daysAhead} days × ${ACCOMMODATIONS.length} types)`)
+  console.log(
+    `Seeded ${count} room inventory rows (${daysAhead} days × ${ACCOMMODATIONS.length} types)`
+  )
 }
 
 async function seedActivities() {
@@ -243,8 +286,9 @@ async function main() {
     throw new Error('BETTER_AUTH_SECRET is required in .env.local')
   }
 
-  console.log('Seeding Safari Camp database...\n')
-  await seedAdmin()
+  console.log('Seeding Safari Camp database…\n')
+  await seedStaffUsers()
+  console.log('')
   await seedAccommodations()
   await seedRoomInventory()
   await seedActivities()

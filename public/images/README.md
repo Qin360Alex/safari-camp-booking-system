@@ -7,12 +7,14 @@ Drop your photos here, then update paths in **`lib/images.ts`** (single source o
 | Folder | Files to add | Shown on |
 |--------|----------------|----------|
 | `brand/` | `logo.png`, `og-image.jpg` | Nav, favicons (`pnpm brand:icons`), social previews |
-| `home/` | `hero.jpg`, `why-choose-us.jpg`, `cta-background.jpg` (optional) | Landing page |
+| `home/` | `hero2.jpg`, `why-choose-us.jpg`, `cta-background.jpg` (optional) | Landing page |
 | `accommodations/` | `luxury-tent.jpg`, etc. | Home + Book |
-| `experiences/` | `game-drive.webp`, `bush-walk.webp`, `night-safari.webp` | Home experiences |
-| `auth/` | `welcome-panel.webp` | Sign-in / Sign-up |
-| `bookings/` | `empty-state.webp`, `card-fallback.webp` | My Bookings |
-| `book/` | `header-banner.webp` | Book page header |
+| `experiences/` | `game-drive.jpg`, `bush-walk.jpg`, `night-safari.jpg` | Home + Experiences pages |
+| `auth/` | `welcome-panel.jpg` | `/auth/sign-in`, `/auth/sign-up` |
+| `bookings/` | `empty-state.jpg`, `card-fallback.jpg` | Guest dashboard (`/guest/dashboard`) |
+| `book/` | `header-banner.jpg`, `confirmation-hero.jpg` | Book + confirmation |
+| `marketing/` | `*-hero.jpg` (optional banners) | Accommodations, Experiences, Guides, Contact |
+| `guides/` | `samuel-kipchoge.jpg`, etc. | Guide portrait cards |
 
 Until a file exists, the site uses `/placeholder.svg` automatically.
 

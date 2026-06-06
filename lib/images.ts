@@ -236,7 +236,7 @@ export const authImages = {
   panel: slot({
     recommendedSrc: '/images/auth/welcome-panel.jpg',
     alt: 'Welcome to Safari Camp Lodge at dawn',
-    usedOn: ['Sign-in `/sign-in`', 'Sign-up `/sign-up`'],
+    usedOn: ['Sign-in `/auth/sign-in`', 'Sign-up `/auth/sign-up`'],
     guidance:
       'Calm, inviting scene: camp fire, morning tea, or lodge entrance. No faces required; warmth and arrival feeling.',
     aspectRatio: '3:4',
@@ -252,7 +252,7 @@ export const bookingImages = {
   emptyState: slot({
     recommendedSrc: '/images/bookings/empty-state.jpg',
     alt: 'Tent and savanna inviting you to plan your first safari',
-    usedOn: ['Bookings `/bookings` → empty state illustration area'],
+    usedOn: ['Guest `/guest/dashboard` → empty state illustration area'],
     guidance:
       'Friendly, light illustration or photo: empty tent ready, horizon, “adventure awaits”. Not sad/empty.',
     aspectRatio: '16:9',
@@ -265,7 +265,7 @@ export const bookingImages = {
   cardFallback: slot({
     recommendedSrc: '/images/bookings/card-fallback.jpg',
     alt: 'Safari landscape',
-    usedOn: ['Bookings `/bookings` → each booking card thumbnail'],
+    usedOn: ['Guest `/guest/dashboard` → each booking card thumbnail'],
     guidance: 'Generic bush panorama or vehicle silhouette. Works at small card size.',
     aspectRatio: '16:9',
     minWidth: 600,
@@ -286,7 +286,98 @@ export const bookImages = {
     aspectRatio: '21:9',
     minWidth: 1600,
   }),
+
+  /** WHERE: Booking confirmation page hero strip */
+  confirmationHero: slot({
+    recommendedSrc: '/images/book/confirmation-hero.jpg',
+    alt: 'Celebratory safari sunset after a successful booking',
+    usedOn: ['Book `/book/confirmation/[id]` → success header background'],
+    guidance:
+      'Warm golden-hour camp scene — celebratory but calm. Works with success icon overlay.',
+    aspectRatio: '21:9',
+    minWidth: 1600,
+  }),
 } as const
+
+/** Marketing sub-pages — optional page headers (wide strips) */
+export const marketingImages = {
+  accommodationsHero: slot({
+    recommendedSrc: '/images/marketing/accommodations-hero.jpg',
+    alt: 'Luxury safari accommodations nestled in the African bush',
+    usedOn: ['Accommodations `/accommodations` → optional header banner'],
+    guidance: 'Wide lodge/tent overview — sets tone for stays listing.',
+    aspectRatio: '21:9',
+    minWidth: 1600,
+  }),
+  experiencesHero: slot({
+    recommendedSrc: '/images/marketing/experiences-hero.jpg',
+    alt: 'Safari vehicle on a game drive across golden savanna',
+    usedOn: ['Experiences `/experiences` → optional header banner'],
+    guidance: 'Action shot: vehicle, wildlife, or guide with guests.',
+    aspectRatio: '21:9',
+    minWidth: 1600,
+  }),
+  guidesHero: slot({
+    recommendedSrc: '/images/marketing/guides-hero.jpg',
+    alt: 'Safari guide briefing guests before a bush walk',
+    usedOn: ['Guides `/guides` → optional header banner'],
+    guidance: 'Guide with small group — trust, expertise, human connection.',
+    aspectRatio: '21:9',
+    minWidth: 1600,
+  }),
+  contactHero: slot({
+    recommendedSrc: '/images/marketing/contact-hero.jpg',
+    alt: 'Safari camp reception area at golden hour',
+    usedOn: ['Contact `/contact` → optional header banner'],
+    guidance: 'Welcoming lodge entrance or camp fire — approachable, warm.',
+    aspectRatio: '21:9',
+    minWidth: 1600,
+  }),
+} as const
+
+/** Guide portraits — IDs match guides on `/guides` */
+export const guideImages = {
+  '1': slot({
+    recommendedSrc: '/images/guides/samuel-kipchoge.jpg',
+    alt: 'Samuel Kipchoge, Lead Safari Guide',
+    usedOn: ['Guides `/guides` → Samuel Kipchoge card'],
+    guidance: 'Professional portrait, outdoor bush backdrop, warm smile.',
+    aspectRatio: '3:4',
+    minWidth: 400,
+  }),
+  '2': slot({
+    recommendedSrc: '/images/guides/grace-mutua.jpg',
+    alt: 'Grace Mutua, Naturalist Guide',
+    usedOn: ['Guides `/guides` → Grace Mutua card'],
+    guidance: 'Naturalist on trail or with flora — approachable expert.',
+    aspectRatio: '3:4',
+    minWidth: 400,
+  }),
+  '3': slot({
+    recommendedSrc: '/images/guides/peter-omondi.jpg',
+    alt: 'Peter Omondi, Night Safari Specialist',
+    usedOn: ['Guides `/guides` → Peter Omondi card'],
+    guidance: 'Evening/dusk portrait or with spotlight equipment.',
+    aspectRatio: '3:4',
+    minWidth: 400,
+  }),
+  '4': slot({
+    recommendedSrc: '/images/guides/amara-kiplagat.jpg',
+    alt: 'Amara Kiplagat, Cultural Guide',
+    usedOn: ['Guides `/guides` → Amara Kiplagat card'],
+    guidance: 'Cultural context — traditional dress optional, dignified portrait.',
+    aspectRatio: '3:4',
+    minWidth: 400,
+  }),
+} as const
+
+export type GuideImageId = keyof typeof guideImages
+
+const experienceIdToImageKey: Record<number, ExperienceImageId> = {
+  1: 'gameDrives',
+  2: 'bushWalks',
+  3: 'nightSafaris',
+}
 
 // --- Helpers ----------------------------------------------------------------
 
@@ -297,6 +388,16 @@ export function getAccommodationImage(id: string): ImageSlot {
 
 export function getExperienceImage(id: ExperienceImageId): ImageSlot {
   return experienceImages[id]
+}
+
+export function getExperienceImageByExperienceId(id: number): ImageSlot {
+  const key = experienceIdToImageKey[id]
+  return key ? experienceImages[key] : experienceImages.gameDrives
+}
+
+export function getGuideImage(id: string): ImageSlot {
+  const key = id as GuideImageId
+  return guideImages[key] ?? guideImages['1']
 }
 
 /** True when the resolved path is a real asset (not placeholder) */
@@ -339,6 +440,16 @@ export const allImageSlots: { category: string; id: string; slot: ImageSlot }[] 
   })),
   ...Object.entries(bookImages).map(([id, slot]) => ({
     category: 'book',
+    id,
+    slot,
+  })),
+  ...Object.entries(marketingImages).map(([id, slot]) => ({
+    category: 'marketing',
+    id,
+    slot,
+  })),
+  ...Object.entries(guideImages).map(([id, slot]) => ({
+    category: 'guides',
     id,
     slot,
   })),

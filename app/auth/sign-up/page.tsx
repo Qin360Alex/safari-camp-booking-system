@@ -1,10 +1,24 @@
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { AuthForm } from '@/components/auth-form'
+import { resolvePostLoginRedirect } from '@/lib/auth-routing'
+import { getAuthContext } from '@/lib/session'
 
-export default async function SignUpPage() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (session?.user) redirect('/')
-  return <AuthForm mode="sign-up" />
+type Props = {
+  searchParams: Promise<{ callbackUrl?: string }>
+}
+
+export default async function SignUpPage({ searchParams }: Props) {
+  const { callbackUrl } = await searchParams
+  const ctx = await getAuthContext()
+
+  if (ctx) {
+    redirect(resolvePostLoginRedirect(ctx.role, callbackUrl))
+  }
+
+  return (
+    <Suspense fallback={<div className="text-muted-foreground text-sm">Loading…</div>}>
+      <AuthForm mode="sign-up" />
+    </Suspense>
+  )
 }

@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Breadcrumb } from '@/components/breadcrumb'
 import { lodgePackages } from '@/lib/landing-data'
+import { SiteImage } from '@/components/site-image'
+import { getAccommodationImage } from '@/lib/images'
 import { Check, MapPin, Users, Wifi, UtensilsCrossed, Dumbbell } from 'lucide-react'
 import { notFound } from 'next/navigation'
 
@@ -62,10 +64,12 @@ export default function AccommodationDetailPage({
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Image Gallery Placeholder */}
-            <div className="bg-gradient-to-br from-primary/30 to-accent/30 rounded-lg aspect-video flex items-center justify-center mb-8 border border-border">
-              <div className="text-center">
-                <p className="text-muted-foreground">Gallery images for {accommodation.name}</p>
-              </div>
+            <div className="photo-frame rounded-lg aspect-video mb-8 overflow-hidden relative">
+              <SiteImage
+                slot={getAccommodationImage(accommodation.id)}
+                preset="detailHero"
+                wrapperClassName="absolute inset-0"
+              />
             </div>
 
             {/* Description */}

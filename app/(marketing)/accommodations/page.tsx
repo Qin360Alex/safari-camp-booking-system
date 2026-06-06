@@ -55,9 +55,11 @@ export default function AccommodationsPage() {
       <section className="px-4 sm:px-6 lg:px-8 pb-20 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {filteredAccommodations.map(pkg => (
-            <Link key={pkg.id} href={`/accommodations/${pkg.id}`}>
-              <PackageCard pkg={pkg} />
-            </Link>
+            <PackageCard
+              key={pkg.id}
+              pkg={pkg}
+              detailHref={`/accommodations/${pkg.id}`}
+            />
           ))}
         </div>
 

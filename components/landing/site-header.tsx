@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Menu, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { SiteLogo } from '@/components/site-logo'
+import { UserMenu } from '@/components/user-menu'
 import { cn } from '@/lib/utils'
 
 const navLinks = [
@@ -48,10 +48,7 @@ export function SiteHeader() {
           <div className="flex h-[4.25rem] items-center justify-between gap-4">
             <SiteLogo variant={isLight ? 'light' : 'dark'} />
 
-            <nav
-              className="hidden lg:flex items-center gap-8"
-              aria-label="Main"
-            >
+            <nav className="hidden lg:flex items-center gap-8" aria-label="Main">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -68,40 +65,17 @@ export function SiteHeader() {
               ))}
             </nav>
 
-            <div className="hidden md:flex items-center gap-3">
-              <Link href="/sign-in">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'border',
-                    isLight
-                      ? 'border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm'
-                      : 'border-border'
-                  )}
-                >
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/book">
-                <Button
-                  size="sm"
-                  className={cn(
-                    isLight
-                      ? 'bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-lg'
-                      : 'bg-primary hover:bg-primary/90'
-                  )}
-                >
-                  Book Now
-                </Button>
-              </Link>
+            <div className="hidden md:flex items-center">
+              <UserMenu variant={isLight ? 'light' : 'dark'} />
             </div>
 
             <button
               type="button"
               className={cn(
                 'lg:hidden p-2 rounded-lg transition-colors',
-                isLight ? 'text-white hover:bg-white/10' : 'text-foreground hover:bg-muted'
+                isLight
+                  ? 'text-white hover:bg-white/10'
+                  : 'text-foreground hover:bg-muted'
               )}
               aria-expanded={menuOpen}
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
@@ -133,17 +107,8 @@ export function SiteHeader() {
                 </Link>
               ))}
             </nav>
-            <div className="mt-6 flex flex-col gap-3">
-              <Link href="/sign-in" onClick={() => setMenuOpen(false)}>
-                <Button variant="outline" className="w-full">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/book" onClick={() => setMenuOpen(false)}>
-                <Button className="w-full bg-primary hover:bg-primary/90">
-                  Book Now
-                </Button>
-              </Link>
+            <div className="mt-6">
+              <UserMenu variant="dark" />
             </div>
           </div>
         </div>
