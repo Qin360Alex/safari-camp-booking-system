@@ -83,7 +83,7 @@ export default function BookPage() {
         specialRequests: specialRequests || undefined,
       })
 
-      router.push(`/bookings/${bookingId}`)
+      router.push(`/book/confirmation/${bookingId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create booking')
     } finally {
