@@ -2,10 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Breadcrumb } from '@/components/breadcrumb'
 import { SiteImage } from '@/components/site-image'
 import { createBooking } from '@/app/actions/bookings'
 import { bookImages, getAccommodationImage, isCustomImage } from '@/lib/images'
+import { ChevronLeft } from 'lucide-react'
 
 const accommodations = [
   {
@@ -95,6 +98,18 @@ export default function BookPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Breadcrumb Navigation */}
+      <div className="border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Breadcrumb
+            items={[
+              { label: 'Accommodations', href: '/accommodations' },
+              { label: 'Book Now' },
+            ]}
+          />
+        </div>
+      </div>
+
       {/* Header */}
       <div className="border-b border-border">
         {showBanner && (

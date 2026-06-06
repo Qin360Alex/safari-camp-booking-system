@@ -9,7 +9,7 @@ export default async function AdminLayout({
 }) {
   const admin = await requireAdmin()
   if (!admin) {
-    redirect('/sign-in?callbackUrl=/admin')
+    redirect('/auth/sign-in?callbackUrl=/admin')
   }
   return (
     <div className="flex min-h-screen bg-background">

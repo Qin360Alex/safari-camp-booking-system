@@ -147,7 +147,7 @@ export default function Home() {
                 Start Booking Now
               </Button>
             </Link>
-            <Link href="/sign-in">
+            <Link href="/auth/sign-up">
               <Button
                 size="lg"
                 variant="outline"
