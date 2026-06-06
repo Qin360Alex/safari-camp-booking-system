@@ -11,7 +11,7 @@ const navLinks = [
   { href: '/accommodations', label: 'Stays' },
   { href: '/experiences', label: 'Experiences' },
   { href: '/guides', label: 'Guides' },
-  { href: '#how-it-works', label: 'How it works' },
+  { href: '/contact', label: 'Contact' },
 ] as const
 
 export function SiteHeader() {
